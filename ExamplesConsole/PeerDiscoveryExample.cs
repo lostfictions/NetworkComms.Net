@@ -1,4 +1,4 @@
-﻿// 
+// 
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -19,11 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using NetworkCommsDotNet;
 using NetworkCommsDotNet.DPSBase;
 using NetworkCommsDotNet.Tools;

@@ -1,4 +1,4 @@
-﻿// 
+// 
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -20,26 +20,12 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.NetworkInformation;
-using System.Text;
 using System.Threading;
 using System.IO;
 
-using NetworkCommsDotNet;
 using NetworkCommsDotNet.DPSBase;
 using NetworkCommsDotNet.Connections;
-using NetworkCommsDotNet.Connections.TCP;
 using NetworkCommsDotNet.Connections.UDP;
-
-#if NET35 || NET4
-using InTheHand.Net.Sockets;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net;
-using InTheHand.Net.Bluetooth.AttributeIds;
-using NetworkCommsDotNet.Connections.Bluetooth;
-#elif NETFX_CORE
-using NetworkCommsDotNet.Tools.XPlatformHelper;
-#endif
 
 namespace NetworkCommsDotNet.Tools
 {
@@ -80,21 +66,7 @@ namespace NetworkCommsDotNet.Tools
             /// <summary>
             /// Peer discovery using a UDP broadcast. Strongly recommended for IP networks.
             /// </summary>
-            UDPBroadcast,
-
-            /// <summary>
-            /// Peer discovery using the bluetooth SDP protocol.
-            /// </summary>
-            BluetoothSDP,
-
-#if !NETFX_CORE && !WINDOWS_PHONE
-            /// <summary>
-            /// Peer discovery using a TCP port scan. Very slow and adversely affects performance on the local network. 
-            /// Should only be used with network configurations where UDP broadcast is unsuccessful. Only IPv4 networks
-            /// are included in a TCP Port scan.
-            /// </summary>
-            TCPPortScan,
-#endif
+            UDPBroadcast
         }
 
         /// <summary>
@@ -107,10 +79,6 @@ namespace NetworkCommsDotNet.Tools
 
             public IPEndPoint IPEndPoint { get { return EndPoint as IPEndPoint; } }
 
-#if NET35 || NET4
-            public BluetoothEndPoint BTEndPoint { get { return EndPoint as BluetoothEndPoint; } }
-#endif
-
             public PeerListenerEndPoint(ConnectionType connectionType, EndPoint endPoint)
             {
                 if (connectionType == Connections.ConnectionType.Undefined)
@@ -118,11 +86,6 @@ namespace NetworkCommsDotNet.Tools
 
                 if ((connectionType == Connections.ConnectionType.TCP || connectionType == Connections.ConnectionType.UDP) && !(endPoint is IPEndPoint))
                     throw new ArgumentException("If connection type is of an IP type then the provided endPoint must be an IPEndPoint", "endPoint");
-
-#if NET35 || NET4
-                if(connectionType == Connections.ConnectionType.Bluetooth && !(endPoint is BluetoothEndPoint))
-                    throw new ArgumentException("If connection type is Bluetooth type then the provided endPoint must be a BluetoothEndPoint", "endPoint");
-#endif
 
                 this.ConnectionType = connectionType;
                 this.EndPoint = endPoint;
@@ -148,20 +111,6 @@ namespace NetworkCommsDotNet.Tools
                     Buffer.BlockCopy(address, 0, result, offset, address.Length); offset += address.Length;
                     Buffer.BlockCopy(port, 0, result, offset, port.Length); offset += port.Length;
                 }
-#if NET35 || NET4
-                else if (ConnectionType == Connections.ConnectionType.Bluetooth)
-                {
-                    var type = BitConverter.GetBytes((int)ConnectionType);
-                    var address = BTEndPoint.Address.ToByteArray();
-                    var port = BTEndPoint.Service.ToByteArray();
-
-                    int offset = 0;
-                    result = new byte[type.Length + address.Length + port.Length];
-                    Buffer.BlockCopy(type, 0, result, offset, type.Length); offset += type.Length;
-                    Buffer.BlockCopy(address, 0, result, offset, address.Length); offset += address.Length;
-                    Buffer.BlockCopy(port, 0, result, offset, port.Length); offset += port.Length;
-                }
-#endif
                 else
                     throw new Exception();
 
@@ -183,17 +132,6 @@ namespace NetworkCommsDotNet.Tools
 
                     result.EndPoint = new IPEndPoint(new IPAddress(address), port);
                 }
-#if NET35 || NET4
-                else if (result.ConnectionType == ConnectionType.Bluetooth)
-                {
-                    byte[] address = new byte[8];
-                    Buffer.BlockCopy(data, offset, address, 0, address.Length); offset += address.Length;
-                    byte[] service = new byte[16];
-                    Buffer.BlockCopy(data, offset, service, 0, service.Length); offset += service.Length;
-
-                    result.EndPoint = new BluetoothEndPoint(new BluetoothAddress(address), new Guid(service));
-                }
-#endif
                 else
                     throw new Exception();
 
@@ -239,11 +177,7 @@ namespace NetworkCommsDotNet.Tools
             }
             set
             {
-#if !NETFX_CORE && !WINDOWS_PHONE
-                if (value == DiscoveryMethod.UDPBroadcast || value == DiscoveryMethod.TCPPortScan)
-#else
                 if (value == DiscoveryMethod.UDPBroadcast)
-#endif
                     _defaultIPDiscoveryMethod = value;
                 else
                     throw new ArgumentException("DefaultIPDiscoveryMethod must be either DiscoveryMethod.UDPBroadcast or DiscoveryMethod.TCPPortScan", "DefaultIPDiscoveryMethod");
@@ -334,11 +268,7 @@ namespace NetworkCommsDotNet.Tools
                     return;
 
                 //Based on the connection type select all local endPoints and then enable discoverable
-#if !NETFX_CORE && !WINDOWS_PHONE
-                if (discoveryMethod == DiscoveryMethod.UDPBroadcast || discoveryMethod == DiscoveryMethod.TCPPortScan)
-#else
                 if (discoveryMethod == DiscoveryMethod.UDPBroadcast)
-#endif
                 {
                     //We should select one of the target points across all adaptors, no need for all adaptors to have
                     //selected a single uniform port which is what happens if we just pass IPAddress.Any to the StartListening method
@@ -358,11 +288,7 @@ namespace NetworkCommsDotNet.Tools
                         {
                             try
                             {
-                                ConnectionListenerBase listener;
-                                if (discoveryMethod == DiscoveryMethod.UDPBroadcast)
-                                    listener = new UDPConnectionListener(NetworkComms.DefaultSendReceiveOptions, ApplicationLayerProtocolStatus.Enabled, UDPOptions.None, true);
-                                else
-                                    listener = new TCPConnectionListener(NetworkComms.DefaultSendReceiveOptions, ApplicationLayerProtocolStatus.Enabled, true);
+                                ConnectionListenerBase listener = new UDPConnectionListener(NetworkComms.DefaultSendReceiveOptions, ApplicationLayerProtocolStatus.Enabled, UDPOptions.None, true);
 
                                 Connection.StartListening(listener, new IPEndPoint(address, tryPort));
 
@@ -379,20 +305,6 @@ namespace NetworkCommsDotNet.Tools
 
                     _discoveryListeners.Add(discoveryMethod, listeners);
                 }
-#if NET35 || NET4
-                else if (discoveryMethod == DiscoveryMethod.BluetoothSDP)
-                {
-                    List<ConnectionListenerBase> listeners = new List<ConnectionListenerBase>();
-
-                    foreach (BluetoothRadio radio in BluetoothRadio.AllRadios)
-                    {
-                        radio.Mode = RadioMode.Discoverable;
-                        listeners.AddRange(Connection.StartListening(ConnectionType.Bluetooth, new BluetoothEndPoint(radio.LocalAddress, BluetoothDiscoveryService), true));
-                    }
-                    
-                    _discoveryListeners.Add(discoveryMethod, listeners);
-                }
-#endif
                 else
                     throw new NotImplementedException("The requested discovery method has not been implemented on the current platform.");
                 
@@ -417,11 +329,7 @@ namespace NetworkCommsDotNet.Tools
         /// <param name="localDiscoveryEndPoint">The local endpoint with which to make this peer discoverable</param>
         public static void EnableDiscoverable(DiscoveryMethod discoveryMethod, EndPoint localDiscoveryEndPoint)
         {
-#if !NETFX_CORE && !WINDOWS_PHONE
-            if (discoveryMethod == DiscoveryMethod.UDPBroadcast || discoveryMethod == DiscoveryMethod.TCPPortScan)
-#else
             if (discoveryMethod == DiscoveryMethod.UDPBroadcast)
-#endif
             {
                 lock (_syncRoot)
                 {
@@ -440,11 +348,7 @@ namespace NetworkCommsDotNet.Tools
                         {
                             try
                             {
-                                ConnectionListenerBase listener;
-                                if (discoveryMethod == DiscoveryMethod.UDPBroadcast)
-                                    listener = new UDPConnectionListener(NetworkComms.DefaultSendReceiveOptions, ApplicationLayerProtocolStatus.Enabled, UDPOptions.None, true);
-                                else
-                                    listener = new TCPConnectionListener(NetworkComms.DefaultSendReceiveOptions, ApplicationLayerProtocolStatus.Enabled, true);
+                                ConnectionListenerBase listener = new UDPConnectionListener(NetworkComms.DefaultSendReceiveOptions, ApplicationLayerProtocolStatus.Enabled, UDPOptions.None, true);
 
                                 Connection.StartListening(listener, new IPEndPoint(address, tryPort));
 
@@ -461,11 +365,7 @@ namespace NetworkCommsDotNet.Tools
                     else
                     {
                         //Based on the connection type select all local endPoints and then enable discoverable
-                        ConnectionListenerBase listener;
-                        if (discoveryMethod == DiscoveryMethod.UDPBroadcast)
-                            listener = new UDPConnectionListener(NetworkComms.DefaultSendReceiveOptions, ApplicationLayerProtocolStatus.Enabled, UDPOptions.None, true);
-                        else
-                            listener = new TCPConnectionListener(NetworkComms.DefaultSendReceiveOptions, ApplicationLayerProtocolStatus.Enabled, true);
+                        ConnectionListenerBase listener = new UDPConnectionListener(NetworkComms.DefaultSendReceiveOptions, ApplicationLayerProtocolStatus.Enabled, UDPOptions.None, true);
 
                         Connection.StartListening(listener, localDiscoveryEndPoint);
 
@@ -484,29 +384,6 @@ namespace NetworkCommsDotNet.Tools
                     }
                 }
             }
-#if NET35 || NET4
-            else if (discoveryMethod == DiscoveryMethod.BluetoothSDP)
-            {
-                lock (_syncRoot)
-                {
-                    foreach (BluetoothRadio radio in BluetoothRadio.AllRadios)
-                        if (radio.LocalAddress == (localDiscoveryEndPoint as BluetoothEndPoint).Address)
-                            radio.Mode = RadioMode.Discoverable;
-
-                    _discoveryListeners.Add(discoveryMethod, Connection.StartListening(ConnectionType.Bluetooth, localDiscoveryEndPoint, true));
-
-                    //Add the packet handlers if required
-                    foreach (var byMethodPair in _discoveryListeners)
-                    {
-                        foreach (ConnectionListenerBase listener in byMethodPair.Value)
-                        {
-                            if (!listener.IncomingPacketHandlerExists(discoveryPacketType, new NetworkComms.PacketHandlerCallBackDelegate<byte[]>(PeerDiscoveryHandler)))
-                                listener.AppendIncomingPacketHandler<byte[]>(discoveryPacketType, PeerDiscoveryHandler);
-                        }
-                    }
-                }
-            }
-#endif
             else
                 throw new NotImplementedException("The requested discovery method has not been implemented on the current platform.");
         }
@@ -517,11 +394,7 @@ namespace NetworkCommsDotNet.Tools
         /// <param name="discoveryMethod">The <see cref="DiscoveryMethod"/> to disable discovery for.</param>
         public static void DisableDiscoverable(DiscoveryMethod discoveryMethod)
         {
-#if !NETFX_CORE && !WINDOWS_PHONE
-            if (discoveryMethod == DiscoveryMethod.UDPBroadcast || discoveryMethod == DiscoveryMethod.TCPPortScan)
-#else
             if (discoveryMethod == DiscoveryMethod.UDPBroadcast)
-#endif
             {
                 lock (_syncRoot)
                 {
@@ -532,22 +405,6 @@ namespace NetworkCommsDotNet.Tools
                     }
                 }
             }
-#if NET35 || NET4
-            else if (discoveryMethod == DiscoveryMethod.BluetoothSDP)
-            {
-                lock (_syncRoot)
-                {
-                    foreach (BluetoothRadio radio in BluetoothRadio.AllRadios)
-                        radio.Mode = RadioMode.Connectable;
-
-                    if (_discoveryListeners.ContainsKey(discoveryMethod))
-                    {
-                        Connection.StopListening(_discoveryListeners[discoveryMethod]);
-                        _discoveryListeners.Remove(discoveryMethod);
-                    }
-                }
-            }
-#endif
         }
 
         /// <summary>
@@ -557,11 +414,6 @@ namespace NetworkCommsDotNet.Tools
         {
             lock (_syncRoot)
             {
-#if NET35 || NET4
-                foreach (BluetoothRadio radio in BluetoothRadio.AllRadios)
-                    radio.Mode = RadioMode.Connectable;
-#endif
-
                 foreach (DiscoveryMethod currentType in _discoveryListeners.Keys)
                     Connection.StopListening(_discoveryListeners[currentType]);
 
@@ -652,14 +504,6 @@ namespace NetworkCommsDotNet.Tools
 
                 if (discoveryMethod == DiscoveryMethod.UDPBroadcast)
                     result = DiscoverPeersUDP(discoverTimeMS);
-#if !NETFX_CORE && !WINDOWS_PHONE
-                else if (discoveryMethod == DiscoveryMethod.TCPPortScan)
-                    result = DiscoverPeersTCP(discoverTimeMS);
-#endif
-#if NET35 || NET4
-                else if (discoveryMethod == DiscoveryMethod.BluetoothSDP)
-                    result = DiscoverPeersBT(discoverTimeMS);
-#endif
                 else
                     throw new NotImplementedException("Peer discovery has not been implemented for the provided connection type.");
             }
@@ -737,251 +581,7 @@ namespace NetworkCommsDotNet.Tools
             return result;
         }
 
-#if !NETFX_CORE && !WINDOWS_PHONE
-        /// <summary>
-        /// Discover peers using TCP port scan
-        /// </summary>
-        /// <param name="discoverTimeMS"></param>
-        /// <returns></returns>
-        private static Dictionary<ShortGuid, Dictionary<ConnectionType, List<EndPoint>>> DiscoverPeersTCP(int discoverTimeMS)
-        {
-            #region Determine All Possible Peers/Port Combinations
-            //Get a list of all IPEndPoint that we should try and connect to
-            //This requires the network and peer portion of current IP addresses
-            List<IPEndPoint> allIPEndPointsToConnect = new List<IPEndPoint>();
 
-            //Look at all possible addresses
-            foreach (var iFace in NetworkInterface.GetAllNetworkInterfaces())
-            {
-                bool interfaceValid = false;
-                var unicastAddresses = iFace.GetIPProperties().UnicastAddresses;
-
-                //Check if this adaptor is allowed
-                if (HostInfo.RestrictLocalAdaptorNames != null)
-                {
-                    foreach (var currentName in HostInfo.RestrictLocalAdaptorNames)
-                    {
-                        if (iFace.Name == currentName)
-                        {
-                            interfaceValid = true;
-                            break;
-                        }
-                    }
-                }
-                else
-                    interfaceValid = true;
-
-                //If the interface is not allowed move to the next adaptor
-                if (!interfaceValid)
-                    continue;
-
-                //If the adaptor is allowed we can now investigate the individual addresses
-                foreach (var address in unicastAddresses)
-                {
-                    //We are only interested in IPV4 ranges. A TCPPortScan on an IPV6 range may take a while
-                    if (address.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork &&
-                        !IPRange.IsAutoAssignedAddress(address.Address))
-                    {
-                        //Check if we have restricted the addresses
-                        bool addressAllowed = true;
-                        if (HostInfo.IP.RestrictLocalAddressRanges != null)
-                            addressAllowed = IPRange.Contains(HostInfo.IP.RestrictLocalAddressRanges, address.Address);
-
-                        if (addressAllowed)
-                        {
-                            //Generate all possible IPEndPoints for the current address and subnetmask
-                            //We have a special catch for the loopback address which has a very large range
-                            List<IPAddress> addressesInRange;
-                            if (address.Address.Equals(IPAddress.Loopback))
-                                addressesInRange = new List<IPAddress>() { IPAddress.Loopback };
-                            else
-                            {
-                                IPRange range = new IPRange(address.Address, address.IPv4Mask);
-                                addressesInRange = range.AllAddressesInRange();
-                            }
-
-                            foreach (IPAddress currentAddressInRange in addressesInRange)
-                            {
-                                for (int port = MinTargetLocalIPPort; port <= MaxTargetLocalIPPort; port++)
-                                    allIPEndPointsToConnect.Add(new IPEndPoint(currentAddressInRange, port));
-                            }
-                        }
-                    }
-                }
-            }
-            #endregion
-
-            #region Send Discovery Packet & Wait
-            //For each address send the discovery packet
-            SendReceiveOptions nullOptions = new SendReceiveOptions<NullSerializer>();
-            StreamTools.StreamSendWrapper sendStream =
-                new StreamTools.StreamSendWrapper(new StreamTools.ThreadSafeStream(new MemoryStream(new byte[0])));
-
-            int previousConnectionTimeout = NetworkComms.ConnectionEstablishTimeoutMS;
-            NetworkComms.ConnectionEstablishTimeoutMS = 1000;
-
-            AutoResetEvent allSendsCompleteEvent = new AutoResetEvent(false);
-            long interlockedCompletedCount = 0;
-            object _syncRoot = new object();
-            List<Connection> allConnections = new List<Connection>();
-
-            //Get unconnected TCP connections
-            foreach (IPEndPoint remoteEndPoint in allIPEndPointsToConnect)
-            {
-                Connection conn = TCPConnection.GetConnection(new ConnectionInfo(remoteEndPoint), false);
-                conn.AppendIncomingPacketHandler<byte[]>(discoveryPacketType, PeerDiscoveryHandler);
-                allConnections.Add(conn);
-            }
-
-            using (Packet sendPacket = new Packet(discoveryPacketType, sendStream, nullOptions))
-            {
-                foreach (Connection conn in allConnections)
-                {
-                    Connection innerConnection = conn;
-
-                    //The longest wait for the port scan is the TCP connect timeout
-                    //The thread pool will start a large number of threads (each of which does very little)
-                    // to greatly speed this up
-                    _tcpPortScanThreadPool.EnqueueItem(QueueItemPriority.Normal, (state) =>
-                    {
-                        try
-                        {
-                            try
-                            {
-								innerConnection.EstablishConnection();
-								innerConnection.SendPacket<byte[]>(sendPacket);
-                            }
-                            catch (CommsException)
-                            {
-                            }
-
-                            lock (_syncRoot)
-                            {
-                                interlockedCompletedCount++;
-                                if (interlockedCompletedCount == allIPEndPointsToConnect.Count)
-                                    allSendsCompleteEvent.Set();
-                            }
-                        }
-                        catch (Exception) { }
-                    }, null);
-                }
-
-                allSendsCompleteEvent.WaitOne();
-            }
-
-            NetworkComms.ConnectionEstablishTimeoutMS = previousConnectionTimeout;
-            
-            sendStream.ThreadSafeStream.Dispose(true);
-
-            AutoResetEvent sleep = new AutoResetEvent(false);
-            //We wait at least 1 second so that connected peers can respond
-            //If we do not wait and close all connections immediately we may miss some replies
-#if NET2
-            sleep.WaitOne(Math.Max(discoverTimeMS, 500), false);
-#else
-            sleep.WaitOne(Math.Max(discoverTimeMS, 500));
-#endif
-
-            //Close any connections we may have established
-            foreach (Connection conn in allConnections)
-            {
-                try
-                {
-                    conn.CloseConnection(false);
-                }
-                catch (CommsException) { }
-            }
-            #endregion
-
-            #region Return Discovered Peers
-            Dictionary<ShortGuid, Dictionary<ConnectionType, List<EndPoint>>> result = new Dictionary<ShortGuid, Dictionary<ConnectionType, List<EndPoint>>>();
-            lock (_syncRoot)
-            {
-                foreach (var idPair in _discoveredPeers)
-                {
-                    if (!result.ContainsKey(idPair.Key))
-                        result.Add(idPair.Key, new Dictionary<ConnectionType, List<EndPoint>>());
-
-                    foreach (var typePair in idPair.Value)
-                    {
-                        if (!result[idPair.Key].ContainsKey(typePair.Key))
-                            result[idPair.Key].Add(typePair.Key, new List<EndPoint>());
-
-                        foreach (var endPoint in typePair.Value)
-                            if (!result[idPair.Key][typePair.Key].Contains(endPoint.Key))
-                                result[idPair.Key][typePair.Key].Add(endPoint.Key);
-                    }
-                }
-            }
-
-            return result;
-            #endregion
-        }
-
-#endif
-
-#if NET35 || NET4
-        /// <summary>
-        /// Discover peers using BT SDP
-        /// </summary>
-        /// <param name="discoverTimeout"></param>
-        /// <returns></returns>
-        private static Dictionary<ShortGuid, Dictionary<ConnectionType, List<EndPoint>>> DiscoverPeersBT(int discoverTimeout)
-        {
-            object locker = new object();
-            AutoResetEvent btDiscoverFinished = new AutoResetEvent(false);
-
-            EventHandler<DiscoverDevicesEventArgs> callBack = (sender, e) =>
-                {
-                    List<EndPoint> endPointsToSendTo = new List<EndPoint>();
-
-                    foreach (var dev in e.Devices)
-                        foreach (var serviceRecord in dev.GetServiceRecords(BluetoothService.RFCommProtocol))
-                            if (serviceRecord.AttributeIds.Contains(BluetoothConnectionListener.NetworkCommsBTAttributeId.NetworkCommsEndPoint))
-                                endPointsToSendTo.Add(new BluetoothEndPoint(dev.DeviceAddress, serviceRecord.GetAttributeById(UniversalAttributeId.ServiceClassIdList).Value.GetValueAsElementList()[0].GetValueAsUuid()));
-                    
-                    using (Packet sendPacket = new Packet(discoveryPacketType, new byte[0], NetworkComms.DefaultSendReceiveOptions))
-                    {
-                        foreach (var remoteEndPoint in endPointsToSendTo)
-                        {
-                            var connection = BluetoothConnection.GetConnection(new ConnectionInfo(remoteEndPoint));
-                            connection.SendPacket<byte[]>(sendPacket);
-                        }
-                    }
-
-                    btDiscoverFinished.Set();
-                };
-
-            BluetoothComponent com = new InTheHand.Net.Bluetooth.BluetoothComponent();
-            com.DiscoverDevicesComplete += callBack;            
-            com.DiscoverDevicesAsync(255, false, false, false, true, com);
-
-            btDiscoverFinished.WaitOne();
-            Thread.Sleep(discoverTimeout);
-
-            Dictionary<ShortGuid, Dictionary<ConnectionType, List<EndPoint>>> result = new Dictionary<ShortGuid, Dictionary<ConnectionType, List<EndPoint>>>();
-            lock (_syncRoot)
-            {
-                foreach (var idPair in _discoveredPeers)
-                {
-                    if(!result.ContainsKey(idPair.Key))
-                        result.Add(idPair.Key, new Dictionary<ConnectionType,List<EndPoint>>());
-
-                    foreach(var typePair in idPair.Value)
-                    {
-                        if(!result[idPair.Key].ContainsKey(typePair.Key))
-                            result[idPair.Key].Add(typePair.Key, new List<EndPoint>());
-
-                        foreach(var endPoint in typePair.Value)
-                            if(!result[idPair.Key][typePair.Key].Contains(endPoint.Key))
-                                result[idPair.Key][typePair.Key].Add(endPoint.Key);
-                    }
-                }
-            }
-
-            return result;
-        }     
-#endif
         #endregion
 
         #region Incoming Comms Handlers
@@ -992,17 +592,8 @@ namespace NetworkCommsDotNet.Tools
         /// <param name="connection"></param>
         /// <param name="data"></param>
         private static void PeerDiscoveryHandler(PacketHeader header, Connection connection, byte[] data)
-        {            
-            DiscoveryMethod discoveryMethod = DiscoveryMethod.UDPBroadcast;
-
-#if !NETFX_CORE && !WINDOWS_PHONE
-            if (connection.ConnectionInfo.ConnectionType == ConnectionType.TCP)
-                discoveryMethod = DiscoveryMethod.TCPPortScan;
-#endif
-#if NET35 || NET4
-            else if (connection.ConnectionInfo.ConnectionType == ConnectionType.Bluetooth)
-                discoveryMethod = DiscoveryMethod.BluetoothSDP;
-#endif
+        {
+            const DiscoveryMethod discoveryMethod = DiscoveryMethod.UDPBroadcast;
 
             //Ignore discovery packets that came from this peer
             if (!Connection.ExistingLocalListenEndPoints(connection.ConnectionInfo.ConnectionType).Contains(connection.ConnectionInfo.RemoteEndPoint))
