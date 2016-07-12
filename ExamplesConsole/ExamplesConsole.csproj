@@ -94,36 +94,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DistributedFileSystem\DistributedFileSystem.csproj">
-      <Project>{5CB68F8C-6002-45D2-9C5F-AE7CF455EB6E}</Project>
-      <Name>DistributedFileSystem</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Platforms\Net40\JSONSerializer\JSONSerializer.csproj">
-      <Project>{70A3F4D5-38DE-4A18-9F28-A7D67755BFDC}</Project>
-      <Name>JSONSerializer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Platforms\Net40\NetworkCommsDotNet\NetworkCommsDotNet.csproj">
-      <Project>{B0FD9F50-A375-44DD-AAAE-CCC2F94A99D1}</Project>
-      <Name>NetworkCommsDotNet</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Platforms\Net40\ProtobufSerializer\ProtobufSerializer.csproj">
-      <Project>{62977BE8-428B-4683-A098-4E3F588B3F7E}</Project>
-      <Name>ProtobufSerializer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Platforms\Net40\QuickLZCompressor\QuickLZCompressor.csproj">
-      <Project>{847B756A-5952-4E07-9CA9-33EDA38F6020}</Project>
-      <Name>QuickLZCompressor</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Platforms\Net40\SharpZipLibCompressor\SharpZipLibCompressor.csproj">
-      <Project>{F27F6581-D3FF-4EF1-8DC6-8DF8E53E4132}</Project>
-      <Name>SharpZipLibCompressor</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\RemoteProcedureCalls\RemoteProcedureCalls.csproj">
-      <Project>{BFB67E36-9DF1-473D-B5DC-D94C5199C624}</Project>
-      <Name>RemoteProcedureCalls</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">
       <Visible>False</Visible>
       <ProductName>Microsoft .NET Framework 4 %28x86 and x64%29</ProductName>
