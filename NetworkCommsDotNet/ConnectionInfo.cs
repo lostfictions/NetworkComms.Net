@@ -37,11 +37,7 @@ using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 #endif
 
-#if ANDROID
-using PreserveAttribute = Android.Runtime.PreserveAttribute;
-#elif iOS
-using PreserveAttribute = Foundation.PreserveAttribute;
-#endif
+
 
 namespace NetworkCommsDotNet
 {
@@ -253,7 +249,7 @@ namespace NetworkCommsDotNet
         /// Private constructor required for deserialisation.
         /// </summary>
 #if ANDROID || iOS
-        [Preserve]
+        
 #endif
         private ConnectionInfo() { }
 

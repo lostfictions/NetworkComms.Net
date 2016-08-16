@@ -27,11 +27,7 @@ using NetworkCommsDotNet.Tools;
 using Windows.Security.Cryptography;
 #endif
 
-#if ANDROID
-using PreserveAttribute = Android.Runtime.PreserveAttribute;
-#elif iOS
-using PreserveAttribute = Foundation.PreserveAttribute;
-#endif
+
 
 namespace NetworkCommsDotNet.DPSBase
 {
@@ -61,7 +57,7 @@ namespace NetworkCommsDotNet.DPSBase
         private const string padExceptionOptionName = "DataPadder_PADEXCEPTION";
 
 #if ANDROID || iOS
-        [Preserve]
+        
 #endif
         private DataPadder() { }
 

@@ -1,4 +1,4 @@
-﻿// 
+// 
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -24,7 +24,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Net.NetworkInformation;
-
+using UnityEngine;
 #if NETFX_CORE
 using NetworkCommsDotNet.Tools.XPlatformHelper;
 using System.Threading.Tasks;
@@ -183,62 +183,58 @@ namespace NetworkCommsDotNet.Tools
                     List<IPAddress> validIPAddresses = new List<IPAddress>();
 
 #if ANDROID
+                    //NetworkInterface
+                    var ni = new AndroidJavaClass("java.net.NetworkInterface");
 
-            var iFaces = Java.Net.NetworkInterface.NetworkInterfaces;
-            while (iFaces.HasMoreElements)
-            {
-                bool interfaceValid = false;
-                var iFace = iFaces.NextElement() as Java.Net.NetworkInterface;
-                var javaAddresses = iFace.InetAddresses;
+                    //Enumeration<NetworkInterface>
+                    var iFaces = ni.CallStatic<AndroidJavaObject>("getNetworkInterfaces");
+                    while(iFaces.Call<bool>("hasMoreElements")) {
+                        bool interfaceValid = false;
+                        var iFace = iFaces.Call<AndroidJavaObject>("nextElement");
 
-                if (RestrictLocalAdaptorNames != null)
-                {
-                    foreach (var id in RestrictLocalAdaptorNames)
-                    if (id == iFace.Name)
-                    {
-                        interfaceValid = true;
-                        break;
-                    }
-                }
-                else
-                    interfaceValid = true;
+                        //Enumeration<InetAddress>
+                        var javaAddresses = iFace.Call<AndroidJavaObject>("getInetAddresses");
 
-                if (!interfaceValid)
-                    continue;
-
-                javaAddresses = iFace.InetAddresses;
-
-                while (javaAddresses.HasMoreElements)
-                {
-                    var javaAddress = javaAddresses.NextElement() as Java.Net.InetAddress;
-                    IPAddress address = default(IPAddress);
-
-                    if (IPAddress.TryParse(javaAddress.HostAddress, out address))
-                    {
-                        if (address.AddressFamily == AddressFamily.InterNetwork || address.AddressFamily == AddressFamily.InterNetworkV6)
-                        {
-                            if (!IPRange.IsAutoAssignedAddress(address))
-                            {
-                                bool allowed = false;
-
-                                if (RestrictLocalAddressRanges != null)
-                                {
-                                    if (IPRange.Contains(RestrictLocalAddressRanges, address))
-                                        allowed = true;
+                        if(RestrictLocalAdaptorNames != null) {
+                            foreach(var id in RestrictLocalAdaptorNames)
+                                if(id == iFace.Call<string>("getName")) {
+                                    interfaceValid = true;
+                                    break;
                                 }
-                                else
-                                    allowed = true;
+                        }
+                        else
+                            interfaceValid = true;
 
-                                if (!allowed)
-                                    continue;
+                        if(!interfaceValid)
+                            continue;
 
-                                if (address != IPAddress.None)
-                                    validIPAddresses.Add(address);
+                        while(javaAddresses.Call<bool>("hasMoreElements")) {
+                            //InetAddress
+                            var javaAddress = javaAddresses.Call<AndroidJavaObject>("nextElement");
+
+                            IPAddress address;
+                            if(IPAddress.TryParse(javaAddress.Call<string>("getHostAddress"), out address)) {
+                                if(address.AddressFamily == AddressFamily.InterNetwork || address.AddressFamily == AddressFamily.InterNetworkV6) {
+                                    if(!IPRange.IsAutoAssignedAddress(address)) {
+                                        bool allowed = false;
+
+                                        if(RestrictLocalAddressRanges != null) {
+                                            if(IPRange.Contains(RestrictLocalAddressRanges, address))
+                                                allowed = true;
+                                        }
+                                        else
+                                            allowed = true;
+
+                                        if(!allowed)
+                                            continue;
+
+                                        if(address != IPAddress.None)
+                                            validIPAddresses.Add(address);
+                                    }
+                                }
                             }
                         }
                     }
-                }    
-            }
 
 #else
 

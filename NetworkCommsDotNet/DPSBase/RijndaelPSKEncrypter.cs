@@ -32,11 +32,7 @@ using System.Security.Cryptography;
 using NetworkCommsDotNet.Tools;
 #endif
 
-#if ANDROID
-using PreserveAttribute = Android.Runtime.PreserveAttribute;
-#elif iOS
-using PreserveAttribute = Foundation.PreserveAttribute;
-#endif
+
 
 namespace NetworkCommsDotNet.DPSBase
 {
@@ -58,7 +54,7 @@ namespace NetworkCommsDotNet.DPSBase
 #endif
 
 #if ANDROID || iOS
-        [Preserve]
+        
 #endif
         private RijndaelPSKEncrypter() 
         {

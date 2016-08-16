@@ -25,11 +25,7 @@ using NetworkCommsDotNet.DPSBase;
 
 using Serializer = NetworkCommsDotNet.DPSBase.DataSerializer;
 
-#if ANDROID
-using PreserveAttribute = Android.Runtime.PreserveAttribute;
-#elif iOS
-using PreserveAttribute = Foundation.PreserveAttribute;
-#endif
+
 
 namespace NetworkCommsDotNet
 {
@@ -113,7 +109,7 @@ namespace NetworkCommsDotNet
         /// Blank constructor required for deserialisation
         /// </summary>
 #if ANDROID || iOS
-        [Preserve]
+        
 #endif
         private PacketHeader() { }
 

@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NetworkCommsDotNet</RootNamespace>
     <AssemblyName>NetworkCommsDotNet</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
@@ -45,7 +45,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;NET2</DefineConstants>
+    <DefineConstants>TRACE;NET2 ANDROID</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Release\NetworkCommsDotNet.XML</DocumentationFile>
@@ -53,7 +53,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>networkcomms.net.snk</AssemblyOriginatorKeyFile>
@@ -62,11 +62,12 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\..\..\..\Program Files\Unity54\Editor\Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Connection\Bluetooth\BluetoothConnection.cs" />
-    <Compile Include="Connection\Bluetooth\BluetoothConnectionListener.cs" />
-    <Compile Include="Connection\Bluetooth\BluetoothConnectionStatic.cs" />
     <Compile Include="Connection\ConnectionListeners.cs" />
     <Compile Include="Connection\ConnectionCreate.cs" />
     <Compile Include="Connection\ConnectionDelegatesHandlers.cs" />

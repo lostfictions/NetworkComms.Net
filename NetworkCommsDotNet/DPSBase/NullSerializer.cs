@@ -22,11 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-#if ANDROID
-using PreserveAttribute = Android.Runtime.PreserveAttribute;
-#elif iOS
-using PreserveAttribute = Foundation.PreserveAttribute;
-#endif
+
 
 namespace NetworkCommsDotNet.DPSBase
 {
@@ -53,7 +49,7 @@ namespace NetworkCommsDotNet.DPSBase
             }
         }
 #if ANDROID || iOS
-        [Preserve]
+        
 #endif
         private NullSerializer() { }
 
