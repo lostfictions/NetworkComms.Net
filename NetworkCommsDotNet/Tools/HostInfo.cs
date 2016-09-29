@@ -97,6 +97,21 @@ namespace NetworkCommsDotNet.Tools
         {
 #if WINDOWS_PHONE || NETFX_CORE
             throw new NotSupportedException("This feature is not supported on the current platform.");
+#elif ANDROID
+            List<string> result = new List<string>();
+
+            //NetworkInterface
+            var ni = new AndroidJavaClass("java.net.NetworkInterface");
+
+            //Enumeration<NetworkInterface>
+            var iFaces = ni.CallStatic<AndroidJavaObject>("getNetworkInterfaces");
+            while(iFaces.Call<bool>("hasMoreElements")) {
+                var iFace = iFaces.Call<AndroidJavaObject>("nextElement");
+
+                result.Add(iFace.Call<string>("getName"));
+            }
+
+            return result;
 #else
             List<string> result = new List<string>();
 
@@ -228,7 +243,7 @@ namespace NetworkCommsDotNet.Tools
                                         if(!allowed)
                                             continue;
 
-                                        if(address != IPAddress.None)
+                                        if(!Equals(address, IPAddress.None))
                                             validIPAddresses.Add(address);
                                     }
                                 }
@@ -608,47 +623,5 @@ namespace NetworkCommsDotNet.Tools
             }
 #endif
         }
-
-#if NET35 || NET4
-
-        /// <summary>
-        /// Host bluetooth information
-        /// </summary>
-        public static class BT
-        {
-            /// <summary>
-            /// Returns all allowed local Bluetooth addresses. 
-            /// If <see cref="RestrictLocalAdaptorNames"/> has been set only returns bBluetooth addresses corresponding with specified adaptors.
-            /// </summary>
-            /// <returns></returns>
-            public static List<BluetoothAddress> FilteredLocalAddresses()
-            {
-                List<BluetoothAddress> allowedAddresses = new List<BluetoothAddress>();
-
-                if (RestrictLocalAdaptorNames == null)
-                {
-                    foreach (var radio in BluetoothRadio.AllRadios)
-                        allowedAddresses.Add(radio.LocalAddress);
-                }
-                else
-                {
-                    foreach (var radio in BluetoothRadio.AllRadios)
-                    {
-                        foreach (var name in RestrictLocalAdaptorNames)
-                        {
-                            if (name == radio.Name)
-                            {
-                                allowedAddresses.Add(radio.LocalAddress);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                return allowedAddresses;
-            }
-        }
-
-#endif
     }
 }

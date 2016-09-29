@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Net20", "Net20", "{A9E07A71-B1DD-4FB1-8D9A-9D7A493FEBAB}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unity", "Unity", "{A9E07A71-B1DD-4FB1-8D9A-9D7A493FEBAB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkCommsDotNet", "NetworkCommsDotNet\NetworkCommsDotNet.csproj", "{7DB00305-F5ED-4545-9D83-542132C8177E}"
 EndProject

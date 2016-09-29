@@ -1,4 +1,4 @@
-﻿// 
+// 
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -24,7 +24,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Net.NetworkInformation;
 using NetworkCommsDotNet.DPSBase;
-
+using UnityEngine;
 #if NETFX_CORE
 using NetworkCommsDotNet.Tools.XPlatformHelper;
 #else
@@ -48,7 +48,7 @@ namespace NetworkCommsDotNet.Tools
             if (localIPAddress.AddressFamily != AddressFamily.InterNetwork)
                 throw new ArgumentException("The method is for IPv4 addresses only.");
             
-#if WINDOWS_PHONE || NETFX_CORE
+#if WINDOWS_PHONE || NETFX_CORE || ANDROID
             throw new NotImplementedException("This method has not yet been implemented for WP8 and WinRT.");
 #else
             //Determine the correct subnet address
@@ -176,8 +176,9 @@ namespace NetworkCommsDotNet.Tools
                     return IPAddress.Parse(name.DisplayName);
 
             return null;
+#elif ANDROID
+            throw new NotImplementedException("Not available on Unity/Android, use non-deprecated method call BestLocalEndPoint(IPEndPoint) instead");
 #else
-
             try
             {
                 //We work out the best interface for connecting with the outside world using the provided target IP
